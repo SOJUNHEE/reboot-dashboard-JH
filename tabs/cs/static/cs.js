@@ -602,6 +602,20 @@
   let SET_TAB = null;
   let TPL_CODE = null;
   const CUST_OPEN = new Map();   // 고객 이력 카드 펼침 (이메일 → 열림 · 새로고침하면 접힘)
+
+  // 안내문: 한 줄만 보이고 나머지는 '자세히'로 (펼침 여부는 이 브라우저에만 기억)
+  const HELP_KEY = 'reboot:cs-help';
+  const helpOpen = () => { try { return JSON.parse(global.localStorage.getItem(HELP_KEY)) || {}; } catch (e) { return {}; } };
+  const helpHTML = (id, line, more) => `<details class="cs-help" data-help="${id}"${helpOpen()[id] ? ' open' : ''}>
+    <summary><span>${line}</span><span class="cs-help-more" aria-hidden="true"></span></summary>
+    <ul>${more.map(t => `<li>${t}</li>`).join('')}</ul></details>`;
+  if (global.document) global.document.addEventListener('toggle', e => {
+    const d = e.target;
+    if (!d.matches || !d.matches('details.cs-help')) return;
+    const all = helpOpen();
+    all[d.dataset.help] = d.open;
+    try { global.localStorage.setItem(HELP_KEY, JSON.stringify(all)); } catch (e2) { /* 저장 못 해도 화면은 그대로 */ }
+  }, true);
   const REC_OPEN = new Map();
 
   function render(root) {
@@ -1586,11 +1600,10 @@ ${todoPanelHTML(inq.draft)}
 <div class="cs-outbox">
   <div class="cs-card-head"><h3>고객 기록 <span class="cs-chip">${all.length}명</span></h3>
     <span class="cs-muted">2건 이상 ${count(c => c.list.length > 1)}명 · 주의 신호 ${count(c => c.signals.length || c.behavior.length)}명 · 주의·응대 제한 분류 ${count(c => c.tag && ['watch', 'limit'].includes(c.tag.tag))}명</span></div>
-  <p class="cs-note">보낸 사람(이메일)별로 문의를 묶었어요.<br>
-    <b>주의 신호</b>는 문의 내용·횟수에서 찾은 사실이고, 신호가 있다고 악성 고객인 것은 아니에요.<br>
-    분류는 담당자가 내용을 보고 이유와 함께 정하세요.<br>
-    분류는 <b>내부 응대 참고용</b>이에요 (고객에게 보이지 않음 · 외부 공유 금지).<br>
-    주의 고객이어도 <b>C1 부작용 신고는 정상 처리</b>해요.</p>
+  ${helpHTML('customers', '같은 이메일로 온 문의를 고객별로 묶었어요.', [
+    '주의 신호는 문의 내용·횟수에서 찾은 사실이에요. 악성 고객이라는 뜻은 아니에요.',
+    '고객 분류는 내부 참고용이라 고객에게 보이지 않아요.',
+    '주의 고객이어도 <b>부작용 신고(C1)는 똑같이 처리</b>해요.'])}
   <div class="cs-row">
     <label class="cs-field"><span>보기</span><select class="cs-input" data-el="cust-view">
       ${[['repeat', '여러 번 보냈거나 신호·분류가 있는 고객'], ['signal', '주의 신호가 있는 고객'], ['tagged', '주의·응대 제한으로 분류한 고객'], ['all', '전체 고객']].map(([v, l]) => `<option value="${v}"${v === f ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
@@ -1773,8 +1786,9 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     const prodOpts = PRODUCTS.map(x => `REBOOT ${x.ko}`);
     p.innerHTML = `
 <div class="cs-adverse">
+  <section class="cs-adv-col">
+  <h3 class="cs-adv-h">부작용 신고 접수</h3>
   <form class="cs-card" data-el="form" novalidate>
-    <h3 class="cs-subject">부작용 신고 접수</h3>
     <p class="cs-muted">시연·테스트에서는 실제 고객 이름·주소·연락처를 입력하지 않아요.</p>
     ${pre.linkedInquiry ? `<p class="cs-muted">연결된 문의: <button type="button" class="cs-linkbtn" data-act="adv-inq">${esc(pre.linkedInquiry)} 열기 →</button> · 저장하면 이 문의로 돌아가요</p>` : ''}
     ${careHit ? `<p class="cs-note cs-note-block">문의에 진료 언급이 있어요: <b>"${esc(careHit)}"</b> → 진료 여부·결과를 문의 내용대로 고르세요.</p>` : ''}
@@ -1793,7 +1807,11 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     <div data-el="msg" aria-live="polite"></div>
     <div class="cs-actions"><button type="submit" class="cs-btn cs-primary">접수 저장</button></div>
   </form>
-  <div data-el="records" class="cs-card cs-records"></div>
+  </section>
+  <section class="cs-adv-col">
+  <h3 class="cs-adv-h" data-el="records-head">접수 기록</h3>
+  <div data-el="records" class="cs-records"></div>
+  </section>
 </div>`;
 
     const form = p.querySelector('[data-el="form"]');
@@ -1879,7 +1897,9 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     list.forEach(r => { const k = (r.fields.lot || '').toLowerCase(); if (k) lotCount[k] = (lotCount[k] || 0) + 1; });
     const now = Date.now();
 
-    p.querySelector('[data-el="records"]').innerHTML = `<h3 class="cs-subject">접수 기록 ${list.length}건</h3>` + (list.length ? list.map(rec => {
+    const head = p.querySelector('[data-el="records-head"]');
+    if (head) head.textContent = `접수 기록 ${list.length}건`;
+    p.querySelector('[data-el="records"]').innerHTML = (list.length ? list.map(rec => {
       const f = rec.fields;
       const s = rec.stages;
       const repeated = f.lot && lotCount[f.lot.toLowerCase()] > 1;
@@ -1890,10 +1910,10 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
       const isOpen = REC_OPEN.has(rec.id) ? REC_OPEN.get(rec.id) : pending;
       return `
 <details class="cs-sec cs-record" data-id="${esc(rec.id)}"${isOpen ? ' open' : ''}>
-  <summary>${rec.serious ? '<span class="cs-badge cs-v-BLOCK">심각</span>' : '<span class="cs-badge cs-v-PASS">일반</span>'}
-    <span class="cs-sec-title">${esc(f.product || '제품 미입력')}</span>
-    <span class="cs-sec-sum"><span class="cs-chip cs-chip-dim">로트 ${esc(f.lot || '—')} · 접수 ${fmt(rec.createdAt)}</span>
-      ${pending ? '<span class="cs-chip cs-chip-warn">처리할 단계 남음</span>' : ''}${rec.missing.length ? `<span class="cs-chip cs-chip-warn">빠진 항목 ${rec.missing.length}</span>` : ''}${repeated ? '<span class="cs-chip cs-chip-warn">같은 로트 반복</span>' : ''}</span></summary>
+  <summary><span class="cs-rec-top">${rec.serious ? '<span class="cs-badge cs-v-BLOCK">심각</span>' : '<span class="cs-badge cs-v-PASS">일반</span>'}
+    <span class="cs-sec-title">${esc(f.product || '제품 미입력')}</span></span>
+    <span class="cs-rec-meta"><span class="cs-rec-when">로트 ${esc(f.lot || '미입력')} · 접수 ${fmt(rec.createdAt)}</span>
+      <span class="cs-rec-flags">${pending ? '<span class="cs-chip cs-chip-warn">처리할 단계 남음</span>' : ''}${rec.missing.length ? `<span class="cs-chip cs-chip-warn">빠진 항목 ${rec.missing.length}</span>` : ''}${repeated ? '<span class="cs-chip cs-chip-warn">같은 로트 반복</span>' : ''}</span></span></summary>
   <div class="cs-sec-body">
   <p class="cs-muted">진료 ${esc(f.care)} · 결과 ${esc(f.outcome)} · 섭취일 ${esc(f.intakeDate || '—')}</p>
   <p>${esc(f.symptoms || '증상 미입력')}</p>
@@ -1929,7 +1949,7 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
   <details class="cs-share-wrap"><summary>${icon('mail')} 담당자에게 전달 (접수 내용 공유)</summary>${shareBoxHTML(`adv:${rec.id}`, 'adverse', '품질·규제 담당')}</details>
   </div>
 </details>`;
-    }).join('') : '<p class="cs-muted">아직 접수 기록이 없어요.<br>왼쪽에서 접수를 저장하면 여기에 쌓여요.<br>심각 사례는 ① 접수 → ② 긴급 검토 → ③ 판단 → ④ 보고 순서가 함께 보여요.</p>');
+    }).join('') : '<p class="cs-muted">아직 접수 기록이 없어요.<br>왼쪽에서 접수를 저장하면 여기에 쌓여요.</p>');
     p.querySelectorAll('details.cs-record').forEach(d => d.addEventListener('toggle', () => REC_OPEN.set(d.dataset.id, d.open)));
     p.querySelectorAll('.cs-share').forEach(fillShare);
   }
@@ -1995,10 +2015,9 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
   `<button type="button" role="tab" data-settab="${id}" aria-selected="${id === SET_TAB}">${l}${n ? ` <span class="n">${n}</span>` : ''}</button>`).join('')}</div>` + contactsHTML() + `
 <section class="cs-setpane cs-defaults" data-setpane="defaults">
     ${dmeta.at ? `<p class="cs-muted">마지막 저장 ${esc(dmeta.by || '')} · ${fmt(dmeta.at)}</p>` : ''}
-    <p class="cs-muted">여기 값이 모든 답장 템플릿의 같은 빈칸을 채워요 (팀 공용 · 고객에게 가는 <b>영어</b>로).<br>
-      <b>팀이 정한 값만</b> 넣으세요.<br>
-      정하지 않은 값을 비워 두면 그 답장은 [확인 필요]로 남아 승인이 막혀요.<br>
-      저장하면 아직 손대지 않은 초안(직접 고치지 않은 · 승인 전)은 새 값으로 다시 만들어져요.</p>
+    ${helpHTML('defaults', '모든 답장에 공통으로 들어갈 값이에요. 비워 둔 칸이 있으면 그 답장은 승인할 수 없어요.', [
+      '고객에게 그대로 가니 <b>영어</b>로, 팀이 정한 값만 넣어 주세요.',
+      '저장하면 아직 손대지 않은 초안에 새 값이 바로 들어가요.'])}
     <div class="cs-defaults-grid">${dFields.map(f => `
       <label class="cs-field${f.long ? ' cs-wide' : ''}"><span>${esc(f.label)} <span class="cs-muted">· ${esc(f.where)}</span></span>
         ${f.long ? `<textarea class="cs-input" rows="2" data-def="${esc(f.key)}" placeholder="${esc(f.placeholder)}">${esc(dv[f.key] || '')}</textarea>`
