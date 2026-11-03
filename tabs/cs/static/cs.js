@@ -1773,8 +1773,9 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     const prodOpts = PRODUCTS.map(x => `REBOOT ${x.ko}`);
     p.innerHTML = `
 <div class="cs-adverse">
+  <section class="cs-adv-col">
+  <h3 class="cs-adv-h">부작용 신고 접수</h3>
   <form class="cs-card" data-el="form" novalidate>
-    <h3 class="cs-subject">부작용 신고 접수</h3>
     <p class="cs-muted">시연·테스트에서는 실제 고객 이름·주소·연락처를 입력하지 않아요.</p>
     ${pre.linkedInquiry ? `<p class="cs-muted">연결된 문의: <button type="button" class="cs-linkbtn" data-act="adv-inq">${esc(pre.linkedInquiry)} 열기 →</button> · 저장하면 이 문의로 돌아가요</p>` : ''}
     ${careHit ? `<p class="cs-note cs-note-block">문의에 진료 언급이 있어요: <b>"${esc(careHit)}"</b> → 진료 여부·결과를 문의 내용대로 고르세요.</p>` : ''}
@@ -1793,7 +1794,11 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     <div data-el="msg" aria-live="polite"></div>
     <div class="cs-actions"><button type="submit" class="cs-btn cs-primary">접수 저장</button></div>
   </form>
-  <div data-el="records" class="cs-card cs-records"></div>
+  </section>
+  <section class="cs-adv-col">
+  <h3 class="cs-adv-h" data-el="records-head">접수 기록</h3>
+  <div data-el="records" class="cs-records"></div>
+  </section>
 </div>`;
 
     const form = p.querySelector('[data-el="form"]');
@@ -1879,7 +1884,9 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     list.forEach(r => { const k = (r.fields.lot || '').toLowerCase(); if (k) lotCount[k] = (lotCount[k] || 0) + 1; });
     const now = Date.now();
 
-    p.querySelector('[data-el="records"]').innerHTML = `<h3 class="cs-subject">접수 기록 ${list.length}건</h3>` + (list.length ? list.map(rec => {
+    const head = p.querySelector('[data-el="records-head"]');
+    if (head) head.textContent = `접수 기록 ${list.length}건`;
+    p.querySelector('[data-el="records"]').innerHTML = (list.length ? list.map(rec => {
       const f = rec.fields;
       const s = rec.stages;
       const repeated = f.lot && lotCount[f.lot.toLowerCase()] > 1;
@@ -1890,10 +1897,10 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
       const isOpen = REC_OPEN.has(rec.id) ? REC_OPEN.get(rec.id) : pending;
       return `
 <details class="cs-sec cs-record" data-id="${esc(rec.id)}"${isOpen ? ' open' : ''}>
-  <summary>${rec.serious ? '<span class="cs-badge cs-v-BLOCK">심각</span>' : '<span class="cs-badge cs-v-PASS">일반</span>'}
-    <span class="cs-sec-title">${esc(f.product || '제품 미입력')}</span>
-    <span class="cs-sec-sum"><span class="cs-chip cs-chip-dim">로트 ${esc(f.lot || '—')} · 접수 ${fmt(rec.createdAt)}</span>
-      ${pending ? '<span class="cs-chip cs-chip-warn">처리할 단계 남음</span>' : ''}${rec.missing.length ? `<span class="cs-chip cs-chip-warn">빠진 항목 ${rec.missing.length}</span>` : ''}${repeated ? '<span class="cs-chip cs-chip-warn">같은 로트 반복</span>' : ''}</span></summary>
+  <summary><span class="cs-rec-top">${rec.serious ? '<span class="cs-badge cs-v-BLOCK">심각</span>' : '<span class="cs-badge cs-v-PASS">일반</span>'}
+    <span class="cs-sec-title">${esc(f.product || '제품 미입력')}</span></span>
+    <span class="cs-rec-meta"><span class="cs-rec-when">로트 ${esc(f.lot || '미입력')} · 접수 ${fmt(rec.createdAt)}</span>
+      <span class="cs-rec-flags">${pending ? '<span class="cs-chip cs-chip-warn">처리할 단계 남음</span>' : ''}${rec.missing.length ? `<span class="cs-chip cs-chip-warn">빠진 항목 ${rec.missing.length}</span>` : ''}${repeated ? '<span class="cs-chip cs-chip-warn">같은 로트 반복</span>' : ''}</span></span></summary>
   <div class="cs-sec-body">
   <p class="cs-muted">진료 ${esc(f.care)} · 결과 ${esc(f.outcome)} · 섭취일 ${esc(f.intakeDate || '—')}</p>
   <p>${esc(f.symptoms || '증상 미입력')}</p>

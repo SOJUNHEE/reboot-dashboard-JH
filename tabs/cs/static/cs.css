@@ -222,9 +222,18 @@
 .part-cs .cs-summary { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; font-size: 12px; }
 
 /* 부작용 접수 */
-/* 입력 폼 · 접수 기록 모두 카드 (2026-11-03 기록만 카드 밖에 떠 있어 제목 높이가 어긋났음) · 폼을 조금 넓게 */
+/* 두 칸 모두 '제목은 카드 밖 위 · 내용은 그 아래' 같은 규칙 → 제목끼리 · 카드 윗선끼리 같은 높이 (2026-11-03) · 폼을 조금 넓게 */
 .part-cs .cs-adverse { display: grid; grid-template-columns: minmax(300px, 3fr) minmax(280px, 2fr); gap: 20px; align-items: start; }
-.part-cs .cs-records { display: grid; gap: 12px; align-content: start; }
+.part-cs .cs-adv-col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.part-cs .cs-adv-h { margin: 0; font-size: 17px; font-weight: 680; line-height: 1.4; letter-spacing: -.3px; }
+.part-cs .cs-records { display: grid; gap: 10px; align-content: start; }
+/* 기록 한 줄 = 늘 두 줄 고정: 1줄 배지 · 제품 / 2줄 로트 · 접수 시각(왼쪽) + 경고 칩(오른쪽) → 기록마다 높이 · 칩 위치가 같음 */
+.part-cs .cs-record > summary { flex-wrap: nowrap; align-items: flex-start; }
+.part-cs .cs-record > summary::before { margin-top: 7px; }
+.part-cs .cs-rec-top, .part-cs .cs-rec-meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.part-cs .cs-record > summary { display: grid; grid-template-columns: auto minmax(0, 1fr); row-gap: 6px; }
+.part-cs .cs-rec-meta { grid-column: 2; justify-content: space-between; flex-wrap: wrap; font-size: 12px; color: var(--cs-muted); }
+.part-cs .cs-rec-flags { display: flex; flex-wrap: wrap; gap: 6px; }
 .part-cs .cs-adverse .cs-input { min-height: 40px; padding-top: 9px; padding-bottom: 9px; }
 .part-cs .cs-adverse textarea.cs-input { min-height: 96px; }
 .part-cs .cs-record p { margin: 0; font-size: 12px; }
