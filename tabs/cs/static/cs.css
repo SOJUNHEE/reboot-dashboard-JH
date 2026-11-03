@@ -222,8 +222,11 @@
 .part-cs .cs-summary { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; font-size: 12px; }
 
 /* 부작용 접수 */
-.part-cs .cs-adverse { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
-.part-cs .cs-records { display: grid; gap: 12px; }
+/* 입력 폼 · 접수 기록 모두 카드 (2026-11-03 기록만 카드 밖에 떠 있어 제목 높이가 어긋났음) · 폼을 조금 넓게 */
+.part-cs .cs-adverse { display: grid; grid-template-columns: minmax(300px, 3fr) minmax(280px, 2fr); gap: 20px; align-items: start; }
+.part-cs .cs-records { display: grid; gap: 12px; align-content: start; }
+.part-cs .cs-adverse .cs-input { min-height: 40px; padding-top: 9px; padding-bottom: 9px; }
+.part-cs .cs-adverse textarea.cs-input { min-height: 96px; }
 .part-cs .cs-record p { margin: 0; font-size: 12px; }
 .part-cs .cs-stages { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 0; font-size: 12px; }
 .part-cs .cs-stages li { padding: 0 0 14px 22px; border-left: 1px solid var(--cs-rule-strong); margin-left: 5px; position: relative; line-height: 1.6; }
