@@ -1,4 +1,4 @@
-/* 고객 응대(CS) 파트: 메일함(새 문의 → ① 표현 점검 → ② 내용 검토 → 보낼 차례 → 보냄) · 분류 · 답장 초안 · 부작용 접수 · 템플릿.
+/* 고객 응대(CS) 파트: 메일함(처리 대기 · 승인 대기 · 처리 완료 — 단계: 신규 → 작성 중 → 승인 대기 → 발송 대기 → 발송 완료) · 분류 · 답장 초안 · 부작용 접수 · 템플릿.
    답변은 자동으로 보내지 않습니다. Gmail은 답장 초안까지만 만들고, 실제 발송은 사람이 합니다.
    다른 파트에는 REBOOT.use('cs')로 stats · classify만 공개합니다. */
 (function (global) {
@@ -69,7 +69,7 @@
   }
 
   /** 템플릿 빈칸 값: 제품 사실(data.js products) → 설정 파트 팩트시트(값이 있으면 우선).
-      확정 안 된 값(내부 제품명 미정 · 맛 임시)은 [확인 필요]로 남겨 표현 점검를 막음 */
+      확정 안 된 값(내부 제품명 미정 · 맛 임시)은 [확인 필요]로 남겨 표현 점검을 막음 */
   const PRODUCT_FACTS = ['ingredients', 'allergens'];
   function facts(inq) {
     let s = {};
@@ -126,7 +126,7 @@
     if (!list.length) return '';
     return `
 <div class="cs-todo-panel" role="note">
-  <p class="cs-todo-title">${icon('alert')} 채워야 할 빈칸 ${list.length}곳 · 모두 채워야 표현 점검를 마칠 수 있어요</p>
+  <p class="cs-todo-title">${icon('alert')} 채워야 할 빈칸 ${list.length}곳 · 모두 채워야 표현 점검을 마칠 수 있어요</p>
   <ol class="cs-todo-list">${list.map((x, i) => `
     <li><button type="button" class="cs-todo-jump" data-act="todo-jump" data-idx="${i}" title="초안에서 이 빈칸을 선택해요">
       <span class="cs-todo-what">${esc(x.what)}</span>
@@ -172,7 +172,7 @@
      ① 표현 점검 = 자동 심의(사용 불가 표현) + 빈칸 · 작성자가 확인하고 '표현 점검 완료'
      ② 내용 검토 = 지정 담당이 유형별 확인 항목을 보고 승인 (작성자와 다른 사람) → 서버 승인 기록 · 보내기 */
 
-  /** 본문 지문: 표현 점검를 마친 뒤 본문이 바뀌면 표현 점검가 다시 열림 */
+  /** 본문 지문: 표현 점검을 마친 뒤 본문이 바뀌면 표현 점검이 다시 열림 */
   function fingerprint(text) {
     const s = String(text || '');
     let h = 5381;
@@ -190,7 +190,7 @@
     return i.status === '답변 대기' ? 'new' : 'phrase';
   }
 
-  /** ① 표현 점검를 마치려면 통과해야 하는 조건 */
+  /** ① 표현 점검을 마치려면 통과해야 하는 조건 */
   function phraseGates(inq, r) {
     const todos = pendingTodos(inq.draft);
     return [
@@ -492,7 +492,7 @@
         if (x.status === '답변 대기' || x.status === '승인') x.status = '검토 중';
         logTo(x, `AI 초안 다듬기 (${persona().name || '페르소나'})`);
       });
-      toast('AI가 초안을 다듬었어요. 걸린 표현과 [확인 필요]를 확인하고 표현 점검를 다시 하세요.');
+      toast('AI가 초안을 다듬었어요. 걸린 표현과 [확인 필요]를 확인하고 표현 점검을 다시 하세요.');
       renderDetail(ui);
       renderList(ui);
     } catch (e) {
@@ -575,18 +575,21 @@
 
   // 하위 메뉴 = 다루는 대상 (문의 · 부작용 · 고객) + 답장 설정 (기본값 · 페르소나 · 템플릿 · 2026-11-03 숨은 버튼 → 탭)
   const TABS = [['inbox', '문의함'], ['adverse', '부작용 접수'], ['customers', '고객 기록'], ['templates', '답장 설정']];
-  // 문의함 단계 = 메일함 폴더 (core가 왼쪽 메뉴의 문의함 아래에 들여 써서 보여 줌). 한 문의는 한 단계에만 · stageOf()로 계산
-  // 새 문의 → ① 표현 점검 → ② 내용 검토 → 보낼 차례 → 보냄 (2026-10-26 메일함 구조)
-  // [값, 이름, 설명] · 이름이 헷갈린다는 의견으로 문구 검토 → 표현 점검 · CS 검토 → 내용 검토 · 보낼 준비 → 보낼 차례 (2026-11-03)
-  const SUBS = [['new', '새 문의', '아직 답장을 쓰지 않은 문의'],
-    ['phrase', '표현 점검', '답장을 쓴 사람이 금지 표현과 빈칸을 확인하는 단계 (자동 심의)'],
-    ['cs', '내용 검토', '답장을 쓴 사람이 아닌 담당자가 내용 · 정책 · 말투를 보고 승인하는 단계'],
-    ['ready', '보낼 차례', '승인이 끝나 보내기만 하면 되는 답장'], ['sent', '보냄', '보낸 답장']];
+  // 문의함 폴더 = 누가 할 차례인지 (core가 왼쪽 메뉴의 문의함 아래에 들여 써서 보여 줌) · 2026-11-03 5단계 → 3폴더
+  // 처리 대기(신규 · 작성 중 · 발송 대기 = 작성자 차례) · 승인 대기(내용 검토 = 다른 담당자 차례) · 처리 완료(발송)
+  // [값, 이름, 설명] · 한 문의는 한 폴더에만 · 단계(stageOf)는 그대로 계산해서 목록에 표시
+  const SUBS = [['todo', '처리 대기', '내가 처리할 문의 · 신규 · 작성 중 · 발송 대기'],
+    ['approval', '승인 대기', '답장을 쓴 사람이 아닌 담당자가 내용 · 정책 · 말투를 보고 승인할 답장'],
+    ['done', '처리 완료', '고객에게 보낸 답장']];
+  const FOLDER = { new: 'todo', phrase: 'todo', ready: 'todo', cs: 'approval', sent: 'done' };
+  const folderOf = i => FOLDER[stageOf(i)];
+  // 목록에 붙는 단계 표시 (Zendesk · Salesforce류 New · Draft · Pending Approval · Ready to Send · Sent)
+  const STEP_BADGE = { new: '신규', phrase: '작성 중', cs: '승인 대기', ready: '발송 대기', sent: '발송 완료' };
   const STAGE_NAME = {};
   SUBS.forEach(([id, label]) => { STAGE_NAME[id] = label; });
   const STAGE_EMPTY = {
-    new: '새로 온 문의가 없어요.', phrase: '표현 점검할 답장이 없어요.', cs: '내용 검토를 기다리는 답장이 없어요.',
-    ready: '보낼 답장이 없어요. 내용 검토를 승인하면 여기로 와요.', sent: '보낸 답장이 없어요.'
+    todo: '처리할 문의가 없어요.', approval: '승인할 답장이 없어요. 작성자가 표현 점검을 마치면 여기로 와요.',
+    done: '보낸 답장이 없어요.'
   };
   // 문의 하나 처리 단계 (상세 화면 밑줄 탭) · 오른쪽 칸에 한 단계 카드만 보여 줌
   // 단계 이름은 왼쪽 메뉴 · 단계 탭에만, 할 일은 오른쪽 카드에만 (중복 표시 정리 2026-10-26)
@@ -640,9 +643,9 @@
     const me = (REBOOT.user && REBOOT.user().name) || '';
     const ui = { root, selected: null, filter: 'open', sort: 'priority', me, approver: me, adverseDraft: null, ctab: 'reply' };
     const panel = name => root.querySelector(`[data-panel="${name}"]`);
-    ui.sub = 'new';
+    ui.sub = 'todo';
     ui.showTab = name => {
-      if (name === 'outbox') { ui.sub = 'ready'; name = 'inbox'; }   // 예전 '보내기' 탭 → 문의함 › 보낼 차례
+      if (name === 'outbox') { ui.sub = 'todo'; name = 'inbox'; }   // 예전 '보내기' 탭 → 문의함 › 처리 대기 (발송 대기 포함)
       root.querySelectorAll('.cs-tab[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
       root.querySelectorAll('.cs-panel').forEach(p => { p.hidden = p.dataset.panel !== name; });
       if (name === 'inbox') ui.showSub(ui.sub);
@@ -651,9 +654,9 @@
       if (name === 'customers') renderCustomers(ui, panel('customers'));
       paintCounts(ui);
     };
-    // 문의함 단계 바꾸기 (예전 이름 work·ready·sent에서 온 호출도 받음 · 모르는 이름은 새 문의)
+    // 문의함 폴더 바꾸기 (예전 단계 이름 new·phrase·cs·ready·sent·work에서 온 호출도 받음 · 모르는 이름은 처리 대기)
     ui.showSub = name => {
-      ui.sub = STAGE_NAME[name] ? name : 'new';
+      ui.sub = STAGE_NAME[name] ? name : FOLDER[name] || 'todo';
       paintSubs(ui);
       renderList(ui);
       renderDetail(ui);
@@ -717,7 +720,7 @@
           root.querySelector('[data-el="sort"]').value = 'newest';
           ui.custFilter = null;
           ui.filter = 'open';
-          ui.sub = 'new';
+          ui.sub = 'todo';
           paintSubs(ui);
           ui.highlight = new Set(fresh.map(x => x.id));   // 새로 온 메일을 목록에서 잠깐 강조
         }
@@ -758,10 +761,10 @@
     ui.root.querySelectorAll('.cs-tab[data-sub]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.sub === ui.sub)));
   }
 
-  /** 처리 단계가 바뀐 문의를 따라 단계 메뉴도 옮김 (고객 이력 보기 중이면 그대로) */
+  /** 처리 단계가 바뀐 문의를 따라 폴더 메뉴도 옮김 (고객 이력 보기 중이면 그대로) */
   function follow(ui) {
     const inq = ui.selected && load().find(x => x.id === ui.selected);
-    if (inq && ui.filter !== 'all' && stageOf(inq) !== ui.sub) { ui.sub = stageOf(inq); paintSubs(ui); }
+    if (inq && ui.filter !== 'all' && folderOf(inq) !== ui.sub) { ui.sub = folderOf(inq); paintSubs(ui); }
   }
 
   /** 메일 하나 열기: 읽음 표시 → 검토 화면 */
@@ -777,13 +780,13 @@
     if (box && box.getBoundingClientRect().top < 0) box.scrollIntoView({ block: 'start' });
   }
 
-  /** 왼쪽 메뉴 숫자 (core가 탭 버튼의 .count를 읽어 표시 · 0은 숨김): 단계별 문의 수 (보냄 제외) · 부작용 = 접수 기록 없는 미처리 C1 */
+  /** 왼쪽 메뉴 숫자 (core가 탭 버튼의 .count를 읽어 표시 · 0은 숨김): 폴더별 문의 수 (처리 완료 제외) · 부작용 = 접수 기록 없는 미처리 C1 */
   function paintCounts(ui) {
     const all = load();
     const adv = new Set(loadAdverse().map(a => a.linkedInquiry).filter(Boolean));
-    const by = s => all.filter(i => stageOf(i) === s).length;
+    const by = s => all.filter(i => folderOf(i) === s).length;
     const n = {
-      new: by('new'), phrase: by('phrase'), cs: by('cs'), ready: by('ready'),
+      todo: by('todo'), approval: by('approval'),
       adverse: all.filter(i => isOpen(i) && i.type === 'C1' && !adv.has(i.id)).length
     };
     ui.root.querySelectorAll('[data-count]').forEach(el => {
@@ -796,7 +799,7 @@
       const dv = replyDefaults();
       const empty = (DATA.replyDefaults || []).filter(f => !String(dv[f.key] || '').trim()).length;
       box.innerHTML = empty ? `<button type="button" class="cs-setupnote" data-act="open-settings"
-        title="비어 있으면 초안에 [확인 필요]가 남아 표현 점검가 막혀요">${icon('alert')} 답장 기본값 <b>${empty}개</b> 비어 있음 · 채우기 →</button>` : '';
+        title="비어 있으면 초안에 [확인 필요]가 남아 표현 점검이 막혀요">${icon('alert')} 답장 기본값 <b>${empty}개</b> 비어 있음 · 채우기 →</button>` : '';
     }
   }
 
@@ -819,7 +822,7 @@
     const pass = (i, f) => {
       if (ui.custFilter && emailOf(i.from) !== ui.custFilter) return false;   // 고객 이력 → '문의 보기'
       if (f === 'all') return true;   // 고객 이력 → '문의 보기'는 단계와 상관없이 그 고객 문의 전부
-      if (stageOf(i) !== ui.sub) return false;
+      if (folderOf(i) !== ui.sub) return false;
       if (f === 'urgent') return i.type === 'C1';
       if (f === 'overdue') return isOpen(i) && now > due(i);
       return true;
@@ -856,7 +859,7 @@
   <span class="cs-avatar" aria-hidden="true">${initials(i.name)}</span>
   <span class="cs-row-from"><span class="cs-item-name">${esc(i.name)}</span>${custMap.has(emailOf(i.from)) ? custChips(custMap.get(emailOf(i.from)), true) : ''}</span>
   <span class="cs-row-main"><span class="cs-row-line"><b class="cs-row-subject">${esc(i.subject)}</b>${subjectKo(i)}<span class="cs-row-snippet"> — ${esc(snippet)}</span></span>
-    <span class="cs-item-tags"><span class="cs-type cs-type-${i.type}">${i.type} ${esc(TYPES[i.type].name)}</span>${ui.filter === 'all' ? `<span class="cs-chip">${STAGE_NAME[stageOf(i)]}</span>` : ''}${i.product ? `<span class="cs-chip cs-chip-dim">${esc(productKo(i.product))}</span>` : ''}${i.source === 'gmail' ? '<span class="cs-chip cs-chip-dim">Gmail</span>' : ''}${gatesMini(i)}</span></span>
+    <span class="cs-item-tags"><span class="cs-type cs-type-${i.type}">${i.type} ${esc(TYPES[i.type].name)}</span><span class="cs-chip cs-stage-${stageOf(i)}">${STEP_BADGE[stageOf(i)]}</span>${i.product ? `<span class="cs-chip cs-chip-dim">${esc(productKo(i.product))}</span>` : ''}${i.source === 'gmail' ? '<span class="cs-chip cs-chip-dim">Gmail</span>' : ''}${gatesMini(i)}</span></span>
   <span class="cs-row-side"><span class="cs-row-time" title="받은 시간">${fmt(i.receivedAt)}</span><span class="cs-due${late ? ' is-late' : ''}">${dueText(i)}</span></span>
 </button></li>`;
     }).join('') + pad + moreBtn : `<li class="cs-muted cs-list-empty">${ui.filter === 'all' ? '해당하는 문의가 없어요.' : STAGE_EMPTY[ui.sub]}</li>`;
@@ -944,7 +947,7 @@
         <button type="button" class="cs-ctab" data-act="ctab" data-ctab="note" aria-pressed="${ui.ctab === 'note'}">내부 메모${notes.length ? ` ${notes.length}` : ''}</button>
         <span class="cs-ctabs-side"><span class="cs-chip cs-chip-dim">${inq.aiDraftAt ? `AI · ${esc(persona().name || '페르소나')}` : `${t.code} 템플릿`}</span>
           <button type="button" class="cs-btn cs-btn-sm" data-act="ai-draft" disabled
-            title="${esc(`${persona().name || ''} 페르소나로 문의에 맞게 다시 써요 · 결과는 표현 점검와 내용 검토를 다시 거쳐요`)}">${icon('spark')} AI로 초안 다듬기</button>
+            title="${esc(`${persona().name || ''} 페르소나로 문의에 맞게 다시 써요 · 결과는 표현 점검과 내용 검토를 다시 거쳐요`)}">${icon('spark')} AI로 초안 다듬기</button>
           <button type="button" class="cs-btn cs-btn-sm" data-act="edit-persona" title="답장 설정에서 페르소나 고치기">페르소나 수정</button></span>
       </div>
       <div class="cs-cpane" data-ctab-pane="reply"${ui.ctab === 'note' ? ' hidden' : ''}>
@@ -1029,8 +1032,8 @@ ${inq.status === '승인' ? `<p class="cs-muted">본문을 고치면 승인이 �
     }
     return `${head}
 <div class="cs-wait" data-el="cs-wait" hidden>
-  <p>02 표현 점검를 먼저 마쳐 주세요. 마치면 여기서 확인 항목을 체크하고 승인해요.</p>
-  <div class="cs-actions"><button type="button" class="cs-btn cs-btn-dark cs-next" data-act="step" data-step="phrase">02 표현 점검로 가기 →</button></div>
+  <p>02 표현 점검을 먼저 마쳐 주세요. 마치면 여기서 확인 항목을 체크하고 승인해요.</p>
+  <div class="cs-actions"><button type="button" class="cs-btn cs-btn-dark cs-next" data-act="step" data-step="phrase">02 표현 점검으로 가기 →</button></div>
 </div>
 <fieldset class="cs-approve" data-el="csfield" aria-label="내용 검토">
   <div class="cs-checks">${csChecks(inq).map((x, k) => `<label class="cs-check"><input type="checkbox" data-el="cs-check" data-k="${k}" ${(inq.csChecks || [])[k] ? 'checked' : ''}> ${esc(x)}</label>`).join('')}</div>
@@ -1162,7 +1165,7 @@ ${todoPanelHTML(inq.draft)}
           if (inq.status === '승인') { inq.status = '검토 중'; inq.approval = null; logTo(inq, '승인 후 초안 수정 → 승인 취소'); revokeServer(inq); }
           else if (inq.status === '답변 대기') inq.status = '검토 중';
         });
-        follow(ui);   // 표현 점검를 마친 뒤 고치면 표현 점검 단계로 돌아감 (본문 지문이 달라짐)
+        follow(ui);   // 표현 점검을 마친 뒤 고치면 표현 점검 단계로 돌아감 (본문 지문이 달라짐)
         renderCheck(ui);
         renderList(ui);
       } else if (el === 'approver') {
@@ -1263,7 +1266,7 @@ ${todoPanelHTML(inq.draft)}
           if (inq.status === '답변 대기') inq.status = '검토 중';
           logTo(inq, `표현 점검 완료 (${by})`);
         });
-        toast('표현 점검를 마쳤어요. 내용 검토로 넘겼어요.');
+        toast('표현 점검을 마쳤어요. 내용 검토로 넘겼어요.');
         redraw();
       } else if (act === 'phrase-undo') {
         patch(id, inq => { inq.phrase = null; logTo(inq, '표현 점검 다시 열기'); });
@@ -1649,7 +1652,7 @@ ${todoPanelHTML(inq.draft)}
       if (!one && !btn) return;
       ui.custFilter = card(e.target).dataset.email;
       ui.filter = 'all';
-      ui.sub = 'work';
+      ui.sub = 'todo';
       ui.showTab('inbox');
       const shownNow = renderList(ui);
       const pick = one ? shownNow.find(i => i.id === one.dataset.id) : shownNow[0];
@@ -1816,7 +1819,7 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
       // 문의에서 열었으면 그 문의로 돌아감 (상세 위쪽에 '부작용 접수 완료'가 보임)
       if (record.linkedInquiry && load().some(x => x.id === record.linkedInquiry)) {
         toast(`부작용 접수를 저장했어요${missing.length ? ` · 빠진 필수 항목: ${missing.map(k => FIELD_LABEL[k]).join(', ')}` : record.serious ? ' · 심각 사례 → 부작용 접수에서 처리 순서를 진행하세요' : ''}.`);
-        ui.sub = 'work';
+        ui.sub = 'todo';
         ui.showTab('inbox');
         openInquiry(ui, record.linkedInquiry);
         return;
@@ -1828,7 +1831,7 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
     });
 
     const back = p.querySelector('[data-act="adv-inq"]');
-    if (back) back.addEventListener('click', () => { ui.sub = 'work'; ui.showTab('inbox'); openInquiry(ui, pre.linkedInquiry); });
+    if (back) back.addEventListener('click', () => { ui.sub = 'todo'; ui.showTab('inbox'); openInquiry(ui, pre.linkedInquiry); });
 
     renderRecords(p);
     p.querySelector('[data-el="records"]').onclick = e => {
@@ -2006,7 +2009,7 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
       <label class="cs-field cs-wide"><span>설명 <span class="cs-muted" data-el="p-count">${String(P.text || '').length}자 / ${PERSONA_MAX}자</span></span>
         <textarea class="cs-input" rows="6" data-p="text" maxlength="${PERSONA_MAX}" placeholder="말투 · 경력 · 지켜야 할 태도를 한국어로">${esc(P.text || '')}</textarea></label>
     </div>
-    <p class="cs-muted">문의함 → 답장 초안의 <b>[AI로 초안 다듬기]</b>가 이 인물로 써요 (팀 공용). 효능 주장 금지·[확인 필요] 유지 같은 안전 규칙은 서버에서 따로 지키고, 결과는 표현 점검와 내용 검토를 다시 거쳐요.</p>
+    <p class="cs-muted">문의함 → 답장 초안의 <b>[AI로 초안 다듬기]</b>가 이 인물로 써요 (팀 공용). 효능 주장 금지·[확인 필요] 유지 같은 안전 규칙은 서버에서 따로 지키고, 결과는 표현 점검과 내용 검토를 다시 거쳐요.</p>
     <div class="cs-actions"><button type="button" class="cs-btn cs-primary" data-act="persona-save">저장</button>
       ${pmeta.at ? '<button type="button" class="cs-btn" data-act="persona-reset">기본값으로 되돌리기</button>' : ''}</div>
 </section>
@@ -2115,7 +2118,7 @@ ${i.body}`, '받은 메일 한국어로 보기')}</div>
   REBOOT.register({
     id: 'cs', icon: '💬', label: '고객 응대', priority: 'P1', order: 65,
     title: '빠르게 답하고, 안전하게 보내기.',
-    subtitle: '문의를 분류하고, 표현 점검와 내용 검토를 거친 답장만 보내요.',
+    subtitle: '문의를 분류하고, 표현 점검과 내용 검토를 거친 답장만 보내요.',
     render,
     summary: () => ({ label: '미처리 문의', value: stats().open })
   });
