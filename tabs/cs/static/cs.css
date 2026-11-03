@@ -373,11 +373,13 @@
 .part-cs .cs-contacts { display: grid; gap: 8px; margin: 8px 0; }
 .part-cs .cs-contact { align-items: flex-end; }
 /* 받은편지함 목록 화면: 보기 · 정렬 · Gmail 불러오기를 한 줄로 */
-.part-cs .cs-inbox[data-view="list"] .cs-listcol { grid-template-columns: minmax(0, 1fr) minmax(200px, 280px) auto auto; align-items: end; padding: 18px 16px; }   /* 정렬 칸은 글자 길이만큼만 */
+.part-cs .cs-inbox[data-view="list"] .cs-listcol { grid-template-columns: minmax(0, 1fr) minmax(200px, 280px) auto auto; align-items: center; padding: 18px 16px; }   /* 정렬 칸은 글자 길이만큼만 */
 .part-cs .cs-inbox[data-view="list"] .cs-listcol > :nth-child(n+4) { grid-column: 1 / -1; }
-/* 버튼은 보기·정렬 칸과 같은 줄·같은 높이, 불러오기 결과 문구는 그 아래 줄 오른쪽 */
+/* 보기 칩 · 정렬 칸 · Gmail 버튼은 한 줄 · 모두 같은 높이(36px) (2026-11-03 높이가 제각각이라 맞춤) · 결과 문구는 그 아래 줄 오른쪽 */
+.part-cs .cs-inbox[data-view="list"] .cs-viewchips .chip { height: 36px; display: inline-flex; align-items: center; padding: 0 12px; box-sizing: border-box; }
+.part-cs .cs-inbox[data-view="list"] .cs-sort .cs-input { height: 36px; min-height: 0; padding: 0 10px; }
 .part-cs .cs-inbox[data-view="list"] .cs-gmailbar { display: contents; }
-.part-cs .cs-inbox[data-view="list"] .cs-gmailbar .cs-btn { align-self: end; min-height: 0; padding-top: 0; padding-bottom: 0; height: 40px; }
+.part-cs .cs-inbox[data-view="list"] .cs-gmailbar .cs-btn { min-height: 0; padding-top: 0; padding-bottom: 0; height: 36px; }
 .part-cs .cs-inbox[data-view="list"] .cs-gmailbar [data-el="gmailmsg"] { grid-column: 1 / -1; justify-self: end; margin-top: -6px; }
 .part-cs .cs-inbox[data-view="list"] .cs-gmailbar [data-el="gmailmsg"]:empty { display: none; }
 @media (max-width: 720px) { .part-cs .cs-inbox[data-view="list"] .cs-listcol { grid-template-columns: 1fr; } }
