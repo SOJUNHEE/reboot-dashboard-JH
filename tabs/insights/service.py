@@ -128,9 +128,9 @@ def _changes(now, prev):
 
 
 def reboot_line():
-    """REBOOT 4종 — 설정 › 제품 정보의 사양서 가격 (출시 전 · 아직 진열대에 없음 · 화면에 '예시').
+    """REBOOT 4종 — 설정 › 제품 정보의 사양서 가격 (가상 출시 · 아직 진열대에 없음 · 화면에 '예시').
     알디콤(실제 진열대 데이터)과 따로 보여 줌. 1회 제공량이 미정이라 1회분 대신 1개(젤리) · 1병(음료)당 값.
-    진열대 순위 · 보통 가격 계산에는 넣지 않음."""
+    보통 가격 · 최저가 계산에는 넣지 않고, 화면에서 진열대 몇 번째쯤인지만 따로 보여 줌."""
     items = []
     for p in catalog.get_products():
         price = p.get("price")
@@ -145,9 +145,10 @@ def reboot_line():
                       "form": "gummy" if jelly else "liquid", "price": price, "priceBox": box,
                       "perUnit": per_unit, "unitLabel": "1개" if jelly else "1병", "zeroSugar": bool(p.get("zero_sugar"))})
     units = [x["perUnit"] for x in items]
-    return {"brand": "REBOOT", "label": "REBOOT (출시 전)", "demo": True, "items": items,
+    return {"brand": "REBOOT", "label": "REBOOT (가상 출시)", "demo": True, "items": items,
             "perUnit": min(units) if units else None, "maxUnit": max(units) if units else None,
-            "basis": "설정 › 제품 정보의 사양서 가격 · 1회 제공량 미정이라 1개 · 1병당 · 진열대 순위 · 보통 가격에는 넣지 않아요"}
+            "basis": "설정 › 제품 정보의 사양서 가격이에요. 1회 제공량이 정해지지 않아 젤리 1개 · 음료 1병 기준으로 "
+                     "진열대 1회분 가격과 비교했어요. 보통 가격 · 최저가 계산에는 넣지 않아요"}
 
 
 def shelf_view():

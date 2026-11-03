@@ -1168,10 +1168,17 @@
     const drag = dockable('price', 'summary-' + REBOOT.today(), { title: `1회분 단가 요약 (${REBOOT.today()})`,
       text: `최저 ${money(low.perServing)} (${low.brand}) · 보통 ${money(median)} (${n}개 기준) · 알디콤 ${own ? money(own.perServing) : '—'} (${ownSub})`,
       href: '/dashboard/insights#market/price', data: { min: low.perServing, minBrand: low.brand, median, products: n, own: own ? own.perServing : null } });
-    // REBOOT (출시 전 · 사양서 가격) — 알디콤과 따로 · 순위 · 보통 가격 계산에는 안 넣음
+    // REBOOT (가상 출시 · 사양서 가격) — 알디콤과 따로 · 보통 가격 계산에는 안 넣고, 진열대 몇 번째쯤인지만 보여 줌
     const rb = S.data.shelf && S.data.shelf.reboot;
-    const rbStat = rb && rb.perUnit != null ? `<div class="ins-stat" title="${esc(rb.basis)}"><span>REBOOT 1개 · 1병당 ${badge('예시', 'orange')}</span>
-      <b>${esc(money(rb.perUnit))}${rb.maxUnit > rb.perUnit ? `<small class="ins-sub"> ~ ${esc(money(rb.maxUnit))}</small>` : ''}</b><small>출시 전 · 사양서 가격 · 순위에 안 넣음</small></div>` : '';
+    let rbStat = '';
+    if (rb && rb.perUnit != null) {
+      const rank = vals.filter(v => v < rb.perUnit).length + 1;
+      const rbPos = rank === 1 ? `진열대 ${n}개 중 가장 저렴` : rank > n ? `진열대 ${n}개보다 비싸요` : `진열대 ${n}개 중 ${rank}번째로 저렴`;
+      const rbAt = Math.min(100, Math.max(0, Number(at(rb.perUnit)))).toFixed(1);
+      rbStat = `<div class="ins-stat" title="${esc(rb.basis)}"><span>REBOOT 1개 · 1병당 ${badge('예시', 'orange')}</span>
+      <b>${esc(money(rb.perUnit))}${rb.maxUnit > rb.perUnit ? `<small class="ins-sub"> ~ ${esc(money(rb.maxUnit))}</small>` : ''}</b><small>가상 가격 · ${esc(rbPos)}</small>
+      <div class="ins-gauge"><u style="left:${at(median)}%"></u><i style="left:${rbAt}%"></i></div></div>`;
+    }
     return `<div class="ins-stats${rbStat ? '' : ' three'}"${drag}>
       <div class="ins-stat"><span>최저 1회분</span><b>${esc(money(low.perServing))}</b><small>${esc(low.brand)}</small></div>
       <div class="ins-stat"><span>보통 가격 ${infoTip(TIP.median)}</span><b>${esc(money(median))}</b><small>${n}개 기준</small></div>
@@ -2237,7 +2244,7 @@
     if (box && S.data.shelf && S.data.competitors) { keepFocus(() => { box.innerHTML = brandTable(); }); placeMkPop(box); }
   }
 
-  // REBOOT 줄 (알디콤 바로 아래 · 출시 전이라 진열대 데이터 없음 · 설정 › 제품 정보 사양서 가격 · 예시)
+  // REBOOT 줄 (알디콤 바로 아래 · 가상 출시라 진열대 데이터 없음 · 설정 › 제품 정보 사양서 가격 · 예시)
   // 판매처 · 재고 · 주시 · AI · 구분 필터를 켜면 숨김 (진열대 값이 없어 그 조건으로 고를 수 없음)
   function rebootRow(q, f) {
     const rb = S.data.shelf && S.data.shelf.reboot;
@@ -2252,7 +2259,7 @@
       <td class="ins-fms">${esc(forms)}</td>
       <td title="${esc(prices)}">사양서 ${esc(money(Math.min(...rb.items.map(x => x.price))))}~</td>
       <td class="num"><span class="ins-ps">${esc(money(rb.perUnit))}</span><small class="ins-ps-f">1개 · 1병당</small></td>
-      <td><span class="muted">—</span></td><td><span class="muted">출시 전</span></td><td class="num">—</td><td>${esc(rb.label)}</td></tr>`;
+      <td><span class="muted">—</span></td><td><span class="muted">가상 출시</span></td><td class="num">—</td><td>${esc(rb.label)}</td></tr>`;
   }
 
   // 회분을 못 읽어 1회로 계산한 값 → 데이터 관리에서 고치기
@@ -2260,7 +2267,7 @@
 
   function brandRow(r) {
     const open = !!S.mk.open[r.brand] && r.items.length > 0;
-    const flags = r.own ? '' : [r.watched ? '<span class="ins-star" title="주시 중">★</span>' : '', r.isNew ? badge('새', 'blue') : '',
+    const flags = r.own ? '' : [r.watched ? '<span class="ins-star" title="주시 중">★</span>' : '', r.isNew ? '<span class="badge blue" title="최근 7일 안에 처음 발견된 경쟁 브랜드예요">신규</span>' : '',
       r.unlisted ? badge('분석 전') : ''].join('');
     const tog = r.items.length ? `<button type="button" class="ins-tg" data-act="mk-toggle" data-brand="${esc(r.brand)}" aria-expanded="${open}" aria-label="${esc(r.brand)} 제품 ${open ? '접기' : '펼치기'}">${open ? '▾' : '▸'}</button>`
       : '<span class="ins-tg none" aria-hidden="true"></span>';
@@ -2377,7 +2384,7 @@
     return `<span class="muted">${why}</span>${c.id != null ? ` · <button type="button" class="ins-link" data-act="comp-research" data-id="${esc(c.id)}">${icon('spark')}지금 분석</button>` : ''}`;
   }
   function compRow(c) {
-    const flags = c.own ? '' : [c.watched ? '<span class="ins-star" title="주시 중">★</span>' : '', c.isNew ? badge('새', 'blue') : ''].join('');
+    const flags = c.own ? '' : [c.watched ? '<span class="ins-star" title="주시 중">★</span>' : '', c.isNew ? '<span class="badge blue" title="최근 7일 안에 처음 발견된 경쟁 브랜드예요">신규</span>' : ''].join('');
     const forms = (c.forms || []).map(f => esc(f.label.split(' (')[0])).join(', ') || '—';
     const fb = c.feedback || {};
     const fbt = [fb.praise ? `<span class="ins-fb pos">+ ${esc(fb.praise.topic)}</span>` : '', fb.complaint ? `<span class="ins-fb neg">− ${esc(fb.complaint.topic)}</span>` : ''].join('') || '<span class="muted">—</span>';
