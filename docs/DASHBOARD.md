@@ -70,9 +70,9 @@ python -m server              # → http://127.0.0.1:5000
 - 계정 관리 같은 관리자 전용 기능은 열리지 않음 · 화면을 열 때 YouTube API를 새로 부르지 않음
 - 원래대로 쓰려면 `PUBLIC_DEMO`를 지우고 Redeploy → 로그인 화면이 돌아옵니다
 
-### 포트폴리오 소개 페이지 (정적 HTML · `portfolio/`)
+### 포트폴리오 소개
 
-같은 저장소로 Vercel 프로젝트를 하나 더 만듭니다: **Add New… → Project → `reboot-dashboard-JH` Import → Project Name `reboot-portfolio-jh` → Root Directory `portfolio` → Framework Preset `Other` → Deploy** (환경변수 없음). 주소: `https://reboot-portfolio-jh.vercel.app`
+프로젝트 소개는 개인 포트폴리오 사이트(`SOJUNHEE/Portfolio`)의 프로젝트 상세 페이지로 옮겼습니다. (예전 정적 소개 페이지 `portfolio/` · Vercel `reboot-portfolio-jh`는 2026-11-05 삭제)
 
 ### Vercel에서 달라지는 점
 
