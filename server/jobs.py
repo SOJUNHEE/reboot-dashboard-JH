@@ -120,9 +120,12 @@ def is_running(name, stale_seconds=3600):
         return False
 
 
-def run_background(app, name, fn, *args, stale_seconds=3600, **kwargs):
+def run_background(app, name, fn, *args, stale_seconds=3600, _wait=None, **kwargs):
     """뒤에서 실행. 잠금은 부른 쪽에서 바로 잡으므로 겹치지 않음.
-    반환: 시작했으면 Thread, 같은 이름이 이미 실행 중이면 None."""
+    반환: 시작했으면 Thread, 같은 이름이 이미 실행 중이면 None.
+    Vercel(서버리스)은 응답을 보낸 뒤의 작업을 보장하지 않으므로 끝날 때까지 기다림 (요청 최대 300초)."""
+    if _wait is None:
+        _wait = bool(app.config.get("IS_VERCEL"))
     path = _lock_path(name, app.config["DATA_DIR"])
     try:
         fd = _acquire(path, name, stale_seconds)
@@ -145,17 +148,19 @@ def run_background(app, name, fn, *args, stale_seconds=3600, **kwargs):
     except Exception:
         _release(fd, path)
         raise
+    if _wait:
+        t.join()
     return t
 
 
 def run_daily(app, wait=False):
     threads, started = [], []
     for name, (_label, fn) in _DAILY.items():
-        t = run_background(app, f"daily-{name}", fn)
+        t = run_background(app, f"daily-{name}", fn, _wait=False)  # 여러 작업은 동시에 시작
         if t is not None:
             threads.append(t)
             started.append(name)
-    if wait:
+    if wait or app.config.get("IS_VERCEL"):
         for t in threads:
             t.join()
     return started

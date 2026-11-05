@@ -1,5 +1,5 @@
 # REBOOT US 마케팅 대시보드 — 서버 의존성
-# Render 빌드: pip install -r requirements.txt  (Python 버전은 .python-version)
+# Vercel 빌드: requirements.txt를 자동으로 설치 (Python 버전은 .python-version)
 # 버전을 올릴 때는 로컬에서 pytest를 돌려 보고 PR로 올립니다.
 
 # 웹 · 로그인 (공통)
@@ -13,6 +13,8 @@ python-dotenv==1.2.4
 email-validator==2.3.0
 gunicorn==26.2.0
 tzdata==2026.5
+# Vercel 배포 DB (Neon Postgres · DATABASE_URL). 로컬 SQLite에서는 쓰지 않음
+psycopg2-binary==2.9.13
 
 # 외부 API · 키 암호화
 requests==2.34.2

@@ -24,7 +24,7 @@
 ## 1. 내 PC에서 실행 (Windows)
 
 ```powershell
-cd reboot-dashboard
+cd reboot-dashboard-JH
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements-dev.txt
@@ -39,28 +39,41 @@ python -m server              # → http://127.0.0.1:5000
 
 ---
 
-## 2. Render 배포
+## 2. Vercel 배포 (무료 Hobby 플랜)
 
-1. **GitHub 저장소** — https://github.com/hungungworld/reboot-dashboard (대시보드 코드가 저장소 맨 위에 있음). `.env` · `instance/` · `dev/`는 `.gitignore`로 제외됩니다.
-   저장소 맨 위의 `render.yaml`(Blueprint)과 `.github/workflows/`를 그대로 씁니다.
-2. **Render → New → Blueprint** → 저장소 선택 → **브랜치는 `main`** (저장소 기본 브랜치 `pre_main`이 골라져 있으면 바꿈) → `render.yaml`이 인식됩니다. 파이썬 버전은 `PYTHON_VERSION`(3.14.8)으로 고정되어 있습니다.
-3. 처음 만들 때 묻는 값 입력: `ADMIN_EMAIL`, `ADMIN_PASSWORD`(8자 이상), `ADMIN_NAME` — 나머지 키는 비워도 됩니다 (배포 후 화면에서 입력 가능).
-   `SECRET_KEY` · `APP_SECRET_KEY` · `CRON_TOKEN`은 Render가 자동으로 만듭니다.
-4. **Deploy** → 발급된 주소(`https://<서비스이름>.onrender.com`)로 접속 → 관리자 계정으로 로그인
-5. **설정 › 연결**에서 OpenAI · Claude · SerpApi · YouTube · Gmail 등 키 입력 → 연결 테스트
-6. (선택) **CS Gmail 문의함** — Google Cloud에서 *웹 애플리케이션* OAuth 클라이언트를 만들고 승인된 리디렉션 URI에 `https://<서비스주소>/api/cs/gmail/callback`을 등록 → `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET` 입력 → 설정 › 연결 › Google로 로그인
-7. (선택) **하루 1회 수집**(홈 뉴스·규제 모니터링) — GitHub 저장소 Secrets에 `REBOOT_URL`(배포 주소)·`CRON_TOKEN`(Render 값과 동일)을 넣으면 `.github/workflows/daily-jobs.yml`이 매일 08:00(KST)에 실행합니다.
+저장소: https://github.com/SOJUNHEE/reboot-dashboard-JH · 설정 파일: 저장소 맨 위 `vercel.json` (진입점 `wsgi.py` · 요청 최대 300초) · Python은 `.python-version`(3.14)
 
-### 플랜과 비용
+1. https://vercel.com 에 **GitHub 계정으로 가입** → **Add New… → Project** → `reboot-dashboard-JH` **Import**
+2. **Project Name** `reboot-dashboard-jh` · Framework Preset은 자동(Flask/Python) · Root Directory는 그대로(`./`)
+3. **Environment Variables**에 아래를 넣고 **Deploy**
 
-| 플랜 | 이 저장소 기본값 | 무료(free) |
+   | 이름 | 값 |
+   |---|---|
+   | `SECRET_KEY` · `APP_SECRET_KEY` · `CRON_TOKEN` | 각각 다른 임의 값: `python -c "import secrets;print(secrets.token_urlsafe(32))"` |
+   | `ADMIN_EMAIL` · `ADMIN_PASSWORD`(8자 이상) · `ADMIN_NAME` | 관리자 계정 |
+   | `TIMEZONE` | `Asia/Seoul` |
+   | `SHOP_EXPORT_TOKEN` | 홈페이지 `EXPORT_API_TOKEN`과 같은 값 |
+   | `SHOP_EXPORT_URL` | 홈페이지 실제 주소 (비우면 `https://reboot-home-jh.vercel.app`) |
+
+4. 프로젝트 **Storage → Create Database → Neon (Postgres)** → 이 프로젝트에 연결 → `DATABASE_URL`이 자동으로 들어감 → **Deployments → 맨 위 ⋯ → Redeploy**
+   (DB 없이 배포하면 `/tmp`의 SQLite를 써서 계정·데이터가 곧 지워집니다)
+5. `https://reboot-dashboard-jh.vercel.app` 접속 → 관리자 계정으로 로그인 → **설정 › 연결**에서 OpenAI · Claude 등 키 입력
+6. (선택) **CS Gmail 문의함** — Google OAuth 승인된 리디렉션 URI에 `https://<배포주소>/api/cs/gmail/callback` 등록
+7. (선택) **하루 1회 수집** — GitHub 저장소 Settings → Secrets and variables → Actions에 `REBOOT_URL`(배포 주소) · `CRON_TOKEN`(3번 값) → `.github/workflows/daily-jobs.yml`이 매일 08:00(KST) 호출
+
+### 포트폴리오 소개 페이지 (정적 HTML · `portfolio/`)
+
+같은 저장소로 Vercel 프로젝트를 하나 더 만듭니다: **Add New… → Project → `reboot-dashboard-JH` Import → Project Name `reboot-portfolio-jh` → Root Directory `portfolio` → Framework Preset `Other` → Deploy** (환경변수 없음). 주소: `https://reboot-portfolio-jh.vercel.app`
+
+### Vercel에서 달라지는 점
+
+| 항목 | 로컬 (`python -m server`) | Vercel |
 |---|---|---|
-| `render.yaml` (저장소 맨 위) | `plan: 0.5c-512mb` + 영구 디스크 1GB (`/var/data`) | `plan: free`로 바꾸고 `disk` 블록 삭제 |
-| 로그인 계정·이력·업로드 | 재배포·재시작 후에도 유지 | **재배포·재시작·잠들 때마다 지워짐** |
-| Gmail SMTP 발송 (파트너 메일) | 가능 | **불가** (465/587 포트 차단) |
-| 잠들기 | 없음 | 15분 접속 없으면 잠들고, 다음 접속에 1분 정도 걸림 |
-
-> 무료 플랜은 시연·시험용으로만 권장합니다. 운영은 유료 플랜 + 디스크(또는 `DATABASE_URL`로 PostgreSQL)를 쓰세요.
+| DB | `instance/reboot.db` (SQLite) | Neon Postgres (`DATABASE_URL`) |
+| 업로드 · 캐시 · 생성 이미지 | `instance/` (남음) | `/tmp/reboot` (**임시 · 재시작하면 지워짐**) |
+| 오래 걸리는 작업 (뉴스 수집 · 인사이트 갱신 · 이미지 생성) | 뒤에서 실행 | **끝날 때까지 기다린 뒤 응답** (300초 넘으면 중단) |
+| 업로드 한 번 크기 | 32MB | **4.5MB** (Vercel 제한) |
+| 잠들기 | — | 없음 (첫 요청만 몇 초 느릴 수 있음) |
 
 ---
 

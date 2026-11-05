@@ -27,17 +27,21 @@ def env_bool(name, default=False):
 
 
 IS_RENDER = env_bool("RENDER")
-IS_PRODUCTION = IS_RENDER or os.environ.get("APP_ENV", "").strip().lower() == "production"
+# Vercel은 실행 중 VERCEL=1을 넣어 줌. 디스크가 남지 않으므로 DB는 DATABASE_URL(Postgres)로, 파일은 /tmp(임시)에 둠
+IS_VERCEL = env_bool("VERCEL")
+IS_PRODUCTION = IS_RENDER or IS_VERCEL or os.environ.get("APP_ENV", "").strip().lower() == "production"
 
 
 def default_data_dir():
-    """업로드·DB·캐시를 두는 곳. Render는 영구 디스크(/var/data)를 DATA_DIR로 연결합니다."""
-    return Path(os.environ.get("DATA_DIR") or (ROOT / "instance")).resolve()
+    """업로드·DB·캐시를 두는 곳. Render는 영구 디스크(/var/data), Vercel은 /tmp/reboot(임시 · 재시작하면 지워짐)."""
+    if os.environ.get("DATA_DIR"):
+        return Path(os.environ["DATA_DIR"]).resolve()
+    return Path("/tmp/reboot") if IS_VERCEL else (ROOT / "instance").resolve()
 
 
 def _secret_key(ddir):
     if IS_PRODUCTION:
-        raise RuntimeError("SECRET_KEY 환경변수가 없습니다. Render → Environment에 SECRET_KEY를 넣으세요.")
+        raise RuntimeError("SECRET_KEY 환경변수가 없습니다. Vercel → Settings → Environment Variables에 SECRET_KEY를 넣으세요.")
     # 로컬 개발: 재시작해도 로그인이 풀리지 않게 DATA_DIR에 개발용 키를 만들어 둠 (깃에 올라가지 않는 폴더)
     f = ddir / ".dev_secret_key"
     if not f.exists():
@@ -50,6 +54,8 @@ def _database_url(ddir):
     url = os.environ.get("DATABASE_URL", "").strip()
     if url.startswith("postgres://"):  # Render·Heroku 형식 → SQLAlchemy 형식
         url = "postgresql://" + url[len("postgres://"):]
+    if not url and IS_VERCEL:
+        log.warning("Vercel인데 DATABASE_URL이 없습니다. /tmp의 SQLite를 쓰므로 계정·데이터가 곧 지워집니다 (Neon Postgres 연결 필요).")
     return url or f"sqlite:///{(ddir / 'reboot.db').as_posix()}"
 
 
@@ -107,8 +113,9 @@ class Config:
     TIMEZONE = os.environ.get("TIMEZONE", "Asia/Seoul")
     IS_PRODUCTION = IS_PRODUCTION
     IS_RENDER = IS_RENDER
+    IS_VERCEL = IS_VERCEL
     # 상단 바의 환경 표시 (예: "DEMO · 예시 데이터")
-    ENV_LABEL = os.environ.get("ENV_LABEL", "").strip() or ("RENDER" if IS_RENDER else "LOCAL")
+    ENV_LABEL = os.environ.get("ENV_LABEL", "").strip() or ("RENDER" if IS_RENDER else "VERCEL" if IS_VERCEL else "LOCAL")
     # 외부 크론(GitHub Actions · Render Cron · cron-job.org)이 하루 1회 작업을 부를 때 쓰는 토큰
     CRON_TOKEN = os.environ.get("CRON_TOKEN", "").strip()
     # 1이면 로그인 화면에 관리자 계정을 미리 채움 (시연용)

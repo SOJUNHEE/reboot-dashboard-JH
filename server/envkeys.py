@@ -59,13 +59,13 @@ SERVICES = [
     Service("OPENAI_MODEL", "OpenAI 모델", "OpenAI를 쓰는 모든 기능", secret=False, group="setting"),
     Service("GMAIL_QUERY", "CS 문의 메일 조건", "CS 문의함 (Gmail 검색어)", secret=False, group="setting"),
     Service("PRODUCT_DESC", "제품 설명 (AI 프롬프트)", "파트너 메일·가이드", secret=False, group="setting"),
-    Service("SHOP_EXPORT_URL", "자사 홈페이지 주소", "판매 실적 자동 연동 (비우면 시연 사이트 reboot-us)", secret=False, group="setting"),
+    Service("SHOP_EXPORT_URL", "자사 홈페이지 주소", "판매 실적 자동 연동 (비우면 내 홈페이지 reboot-home-jh.vercel.app · 로컬은 http://127.0.0.1:5050)", secret=False, group="setting"),
     Service("REGULATION_DB_URL", "규제(검열) DB 주소", "파트너 협업 메일 '규제 DB 연결' 표시 (통합 DB 미정)", group="setting"),
     Service("CONTENT_TEXT_MODEL", "콘텐츠 대화·제작 모델", "콘텐츠 제작 (비우면 OPENAI_MODEL)", secret=False, group="setting"),
     Service("CONTENT_IMAGE_MODEL", "콘텐츠 이미지 모델", "콘텐츠 이미지 생성 (비우면 gpt-image-2.5-sunburst)", secret=False, group="setting"),
 ]
 _BY_NAME = {s.name: s for s in SERVICES}
-DEFAULTS = {"OPENAI_MODEL": "gpt-4o-mini", "SHOP_EXPORT_URL": "https://reboot-us.onrender.com"}
+DEFAULTS = {"OPENAI_MODEL": "gpt-4o-mini", "SHOP_EXPORT_URL": "https://reboot-home-jh.vercel.app"}
 
 
 def service(name):

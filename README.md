@@ -303,8 +303,8 @@ reboot/
 ## 7. 설치 및 실행
 
 ```cmd
-git clone https://github.com/hungungworld/reboot-dashboard.git
-cd reboot-dashboard
+git clone https://github.com/SOJUNHEE/reboot-dashboard-JH.git
+cd reboot-dashboard-JH
 pip install -r requirements-dev.txt
 copy .env.example .env
 python -m server

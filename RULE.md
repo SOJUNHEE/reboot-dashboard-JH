@@ -6,6 +6,20 @@
 
 ---
 
+## ★ 개인 저장소 모드 (이 단락이 아래 모든 조항보다 우선)
+
+이 저장소는 팀 저장소 `hungungworld/reboot-dashboard`의 `main`(2026-11-05, `c6d4ab4`)을 복사해 **소준희(JH)가 혼자 관리하는 독립 저장소**입니다. (`SOJUNHEE/reboot-dashboard-JH` · 공개 · 포트폴리오용)
+
+- **담당:** JH 한 명. `tabs/`·`server/`·`core/`·`data/`·`tests/` 등 **모든 폴더를 고칠 수 있습니다.** (PM 상의 불필요)
+- **브랜치:** `main` 하나만 씁니다. `main`에 바로 커밋·push합니다. `pre_main`·이니셜 브랜치·PR·승인·CODEOWNERS는 쓰지 않습니다.
+- **적용하지 않는 조항:** §0의 1~3, §1 팀과 담당, §3의 pre-push 차단 장치, §4 브랜치, §5 매일 작업 순서, §7 PR·검토·병합, §11 GitHub 설정.
+- **그대로 지키는 조항:** §0의 4~5, §2 폴더 구조, §6 커밋 메시지, §8 코드 규칙, §9 비밀 정보, §10 AI 사용 규칙 (파일 변경 전 보고·승인, Git 쓰기 명령은 매번 허락, force push·`reset --hard` 금지).
+- **공개 저장소입니다.** `.env`·`instance/`(DB·업로드)는 절대 커밋하지 않습니다.
+- **배포:** Render 대신 **Vercel**(프로젝트 `reboot-dashboard-jh`) + **Neon Postgres**(`DATABASE_URL`). 방법은 `docs/DASHBOARD.md` 2장. 이 파일 아래의 Render 설명은 팀 시절 기록입니다.
+- **연동:** 홈페이지(`SOJUNHEE/reboot-home-JH`, Vercel `reboot-home-jh`)는 별도 저장소·별도 프로젝트로 관리하고, HTTP API(`SHOP_EXPORT_URL`·`SHOP_EXPORT_TOKEN` ↔ 홈페이지 `EXPORT_API_TOKEN`)와 컴플라이언스 규칙 파일 복사로만 연결합니다.
+
+---
+
 ## 0. 꼭 지킬 5가지
 
 1. **내 탭 폴더만 고친다.** (`tabs/<내 탭>/`) 공통 폴더(`server/`, `core/`)는 PM과 상의한다.
@@ -76,8 +90,8 @@ reboot/                       ← 저장소 맨 위
 ## 3. 처음 설정 (Windows · 한 번만)
 
 ```cmd
-git clone https://github.com/hungungworld/reboot-dashboard.git
-cd reboot-dashboard
+git clone https://github.com/SOJUNHEE/reboot-dashboard-JH.git
+cd reboot-dashboard-JH
 conda activate myenv          (또는: python -m venv .venv → .venv\Scripts\activate)
 pip install -r requirements-dev.txt
 copy .env.example .env        (메모장으로 .env를 열어 키·관리자 계정 채우기)

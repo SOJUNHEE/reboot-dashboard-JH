@@ -1,7 +1,7 @@
 # 하루 1회 작업 (홈 뉴스 수집 · 규제 모니터링 등) — 매일 08:00 (KST)
 # 저장소 Settings → Secrets and variables → Actions 에 두 값을 넣으면 동작합니다 (없으면 건너뜀)
-#   REBOOT_URL  배포 주소 (예: https://reboot-dashboard.onrender.com)
-#   CRON_TOKEN  Render Environment의 CRON_TOKEN 값과 같게
+#   REBOOT_URL  배포 주소 (예: https://reboot-dashboard-jh.vercel.app)
+#   CRON_TOKEN  Vercel Environment Variables의 CRON_TOKEN 값과 같게
 name: daily-jobs
 on:
   schedule:
