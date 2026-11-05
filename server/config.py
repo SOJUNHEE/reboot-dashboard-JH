@@ -114,8 +114,11 @@ class Config:
     IS_PRODUCTION = IS_PRODUCTION
     IS_RENDER = IS_RENDER
     IS_VERCEL = IS_VERCEL
+    # 1이면 시연(보기 전용) 모드: 로그인 없이 입장 · 쓰기 잠금 (server/demo.py)
+    PUBLIC_DEMO = env_bool("PUBLIC_DEMO")
     # 상단 바의 환경 표시 (예: "DEMO · 예시 데이터")
-    ENV_LABEL = os.environ.get("ENV_LABEL", "").strip() or ("RENDER" if IS_RENDER else "VERCEL" if IS_VERCEL else "LOCAL")
+    ENV_LABEL = os.environ.get("ENV_LABEL", "").strip() or (
+        "DEMO · 보기 전용" if PUBLIC_DEMO else "RENDER" if IS_RENDER else "VERCEL" if IS_VERCEL else "LOCAL")
     # 외부 크론(GitHub Actions · Render Cron · cron-job.org)이 하루 1회 작업을 부를 때 쓰는 토큰
     CRON_TOKEN = os.environ.get("CRON_TOKEN", "").strip()
     # 1이면 로그인 화면에 관리자 계정을 미리 채움 (시연용)

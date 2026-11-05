@@ -1012,7 +1012,8 @@ def _yt_schema():
 @bp.get("/youtube")
 def youtube_list():
     info = {"refreshed": 0, "removed": 0, "warning": ""}
-    if request.args.get("refresh", "1") != "0":
+    # 시연 모드(PUBLIC_DEMO)에서는 화면을 열 때 YouTube API를 부르지 않음 (방문자가 할당량을 쓰지 않게)
+    if request.args.get("refresh", "1") != "0" and not current_app.config.get("PUBLIC_DEMO"):
         info = youtube.refresh()
     rows = PartnerYoutubeCreator.query.all()
     rows.sort(key=lambda r: -(r.subscribers or 0))

@@ -66,6 +66,9 @@ def create_app(test_config=None):
             return None
         return user
 
+    # 시연 모드(PUBLIC_DEMO=1): 자동 입장 · 쓰기 잠금. API 로그인 검사보다 먼저 실행되어야 함
+    from .demo import register_demo
+    register_demo(app)
     register_api_guards(app)
 
     from .core.templating import register_template_helpers

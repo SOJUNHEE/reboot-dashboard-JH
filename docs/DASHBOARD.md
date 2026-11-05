@@ -61,6 +61,15 @@ python -m server              # → http://127.0.0.1:5000
 6. (선택) **CS Gmail 문의함** — Google OAuth 승인된 리디렉션 URI에 `https://<배포주소>/api/cs/gmail/callback` 등록
 7. (선택) **하루 1회 수집** — GitHub 저장소 Settings → Secrets and variables → Actions에 `REBOOT_URL`(배포 주소) · `CRON_TOKEN`(3번 값) → `.github/workflows/daily-jobs.yml`이 매일 08:00(KST) 호출
 
+### 시연(보기 전용) 모드 — `PUBLIC_DEMO=1`
+
+포트폴리오로 공개할 때 Vercel 환경변수에 `PUBLIC_DEMO` = `1`을 넣고 Redeploy합니다.
+
+- 로그인 화면 없이 '시연 방문자' 계정(관리자 아님)으로 바로 입장 · 상단에 `DEMO · 보기 전용` 표시
+- 저장 · 메일/답장 발송 · AI 실행 · 키 변경 · 업로드 등 쓰기 요청은 모두 잠김 ("시연(보기 전용) 모드라 … 잠겨 있어요")
+- 계정 관리 같은 관리자 전용 기능은 열리지 않음 · 화면을 열 때 YouTube API를 새로 부르지 않음
+- 원래대로 쓰려면 `PUBLIC_DEMO`를 지우고 Redeploy → 로그인 화면이 돌아옵니다
+
 ### 포트폴리오 소개 페이지 (정적 HTML · `portfolio/`)
 
 같은 저장소로 Vercel 프로젝트를 하나 더 만듭니다: **Add New… → Project → `reboot-dashboard-JH` Import → Project Name `reboot-portfolio-jh` → Root Directory `portfolio` → Framework Preset `Other` → Deploy** (환경변수 없음). 주소: `https://reboot-portfolio-jh.vercel.app`
