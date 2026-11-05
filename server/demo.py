@@ -19,6 +19,11 @@ from .security import UNSAFE, is_api
 DEMO_EMAIL = "demo-viewer@reboot.invalid"
 DEMO_NAME = "시연 방문자"
 WRITE_ALLOWED = {"core.jobs_daily"}
+# 화면 상태 자동 저장(REBOOT.store): 저장하지 않고 성공만 돌려줌 → '저장하지 못했습니다' 알림 · 재시도가 생기지 않음
+#   (방문자가 바꾼 화면 상태는 그 브라우저 화면에만 남고 다른 방문자에게는 보이지 않음)
+FAKE_SAVE = {"core.store_put", "core.store_delete"}
+# 파트 화면 파일(공개 저장소의 JS·CSS)과 상태 확인은 DB를 거치지 않음 → 첫 방문 때 파일 27개가 동시에 DB를 깨우다 실패하지 않게
+NO_DB = {"core.part_file", "core.healthz"}
 LOCKED_MSG = "시연(보기 전용) 모드라 저장 · 발송 · AI 실행은 잠겨 있어요."
 
 
@@ -40,8 +45,10 @@ def register_demo(app):
     @app.before_request
     def _demo_guard():
         endpoint = request.endpoint or ""
-        if endpoint == "static" or endpoint.endswith(".static"):
+        if endpoint == "static" or endpoint.endswith(".static") or endpoint in NO_DB:
             return None
+        if request.method in UNSAFE and endpoint in FAKE_SAVE:
+            return jsonify(ok=True, demo=True)
         if request.method in UNSAFE and endpoint not in WRITE_ALLOWED:
             if is_api():
                 return jsonify(error=LOCKED_MSG, demo=True), 403

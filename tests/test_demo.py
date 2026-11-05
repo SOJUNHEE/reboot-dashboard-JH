@@ -48,6 +48,27 @@ def test_demo_keeps_cron_job(tmp_path, monkeypatch):
     assert res.status_code != 403 or "demo" not in (res.get_json() or {})
 
 
+def test_demo_store_save_is_a_no_op(tmp_path, monkeypatch):
+    app, client = _demo_client(tmp_path, monkeypatch)
+    client.get("/dashboard")
+    res = client.put("/api/store/cs/demo-key", json={"a": 1})
+    assert res.status_code == 200 and res.get_json() == {"ok": True, "demo": True}
+    assert client.delete("/api/store/cs/demo-key").status_code == 200
+    with app.app_context():
+        from server.models import StoreItem
+        assert StoreItem.query.filter_by(part="cs", key="demo-key").first() is None
+
+
+def test_demo_part_files_need_no_session(tmp_path, monkeypatch):
+    _, client = _demo_client(tmp_path, monkeypatch)
+    res = client.get("/parts/compliance/compliance.js")
+    assert res.status_code == 200 and "javascript" in res.headers["Content-Type"]
+
+
+def test_part_files_need_login_without_demo(client):
+    assert client.get("/parts/compliance/compliance.js").status_code == 302
+
+
 def test_without_demo_login_is_required(client):
     assert client.get("/dashboard").status_code == 302
     assert client.get("/api/me").status_code == 401

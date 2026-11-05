@@ -99,8 +99,10 @@ def _render_part(part_id, extra=None):
 
 
 @bp.get("/parts/<path:filename>")
-@login_required
 def part_file(filename):
+    # 시연 모드(PUBLIC_DEMO)에서는 로그인 확인(DB 조회) 없이 내려줌 — 공개 저장소에 있는 화면 코드라 비밀 아님
+    if not current_app.config.get("PUBLIC_DEMO") and not current_user.is_authenticated:
+        return current_app.login_manager.unauthorized()
     if Path(filename).suffix.lower() not in PART_FILE_TYPES:
         abort(404)
     pid, _, name = filename.partition("/")
